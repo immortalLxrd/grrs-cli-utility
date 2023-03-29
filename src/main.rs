@@ -1,7 +1,10 @@
 use anyhow::{Context, Result};
 use clap::Parser;
-use std::io::{self, Write};
-use std::{fs::File, io::BufRead, io::BufReader, path::PathBuf};
+use std::{
+    fs::File,
+    io::{self, BufRead, BufReader},
+    path::PathBuf,
+};
 
 #[derive(Parser)]
 struct Cli {
@@ -9,9 +12,18 @@ struct Cli {
     path: PathBuf,
 }
 
+#[test]
+fn find_a_match() {
+    let mut result = Vec::new();
+
+    grrs::find_matches("cat\n", "cat", &mut result);
+    assert_eq!(result, b"cat\n\n");
+}
+
+
 fn main() -> Result<()> {
     let stdout = io::stdout();
-    let mut handle = io::BufWriter::new(stdout);
+    let mut writer = io::BufWriter::new(stdout);
 
     let args = Cli::parse();
     let file = File::open(&args.path)
@@ -20,9 +32,7 @@ fn main() -> Result<()> {
 
     for line in reader.lines() {
         let content = line?;
-        if content.contains(&args.pattern) {
-            writeln!(handle, "{}", content)?;
-        }
+        grrs::find_matches(&content, &args.pattern, &mut writer)?;
     }
 
     Ok(())
